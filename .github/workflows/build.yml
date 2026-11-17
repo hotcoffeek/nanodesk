@@ -3,7 +3,6 @@ name: Build APK
 on:
   push:
     branches: [ main, master ]
-    tags: [ 'v*' ]
   workflow_dispatch:
 
 permissions:
@@ -35,8 +34,10 @@ jobs:
           name: NanoDesk-apk
           path: NanoDesk.apk
 
-      - name: Publish release (tags only)
-        if: startsWith(github.ref, 'refs/tags/v')
+      - name: Publish release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: latest
+          name: NanoDesk APK (latest)
           files: NanoDesk.apk
+          make_latest: true
