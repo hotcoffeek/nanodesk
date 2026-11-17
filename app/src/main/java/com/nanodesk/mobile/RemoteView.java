@@ -43,6 +43,8 @@ public final class RemoteView extends View {
     public boolean touchpad = true;
     public boolean panMode;                 // двухпальцевое движение двигает картинку, а не крутит колесо
     public float speed = 1.4f;
+    public float ptrScale = 0.7f;
+    private long lastClickAt;
     public boolean invertScroll;
     public boolean haptics = true;
     public boolean pasteAll;
@@ -210,7 +212,7 @@ public final class RemoteView extends View {
 
     private void drawPointer(Canvas c) {
         float[] s = toScreen(cx, cy);
-        float u = Ui.dp(getContext(), 1);
+        float u = Ui.dp(getContext(), 1) * ptrScale;
         Path p = new Path();
         p.moveTo(s[0], s[1]);
         p.lineTo(s[0], s[1] + 17 * u);
@@ -240,9 +242,20 @@ public final class RemoteView extends View {
     private int ry(float v) { return Math.max(0, Math.min(Math.max(0, link.remoteH - 1), Math.round(v))); }
 
     private void click(Session s, int button, float x, float y) {
+        lastClickAt = SystemClock.uptimeMillis();
         s.mouseMove(rx(x), ry(y));
         s.mouseButton(true, button, rx(x), ry(y));
         s.mouseButton(false, button, rx(x), ry(y));
+    }
+
+    /**
+     * Нажатие левой кнопки для перетаскивания. Если прямо перед этим был клик (тап, а затем «тянем»),
+     * ждём, пока пройдёт время двойного клика: иначе Windows примет это за двойной клик и развернёт окно на весь экран.
+     */
+    private void pressLeft(Session s) {
+        long wait = 560 - (SystemClock.uptimeMillis() - lastClickAt);
+        if (wait > 0) s.pause((int) wait);
+        s.mouseButton(true, 0, rx(cx), ry(cy));
     }
 
     private void moveCursor(Session s, float x, float y) {
@@ -306,12 +319,12 @@ public final class RemoteView extends View {
                 // «тап и сразу тянем» — перетаскивание (как на тачпаде ноутбука)
                 dragging = true;
                 buzz();
-                s.mouseButton(true, 0, rx(cx), ry(cy));
+                pressLeft(s);
             } else if (s != null && !touchpad) {
                 float[] r = toRemote(downX, downY);
                 moveCursor(s, r[0], r[1]);
                 dragging = true;
-                s.mouseButton(true, 0, rx(cx), ry(cy));
+                pressLeft(s);
             }
             lastX = x; lastY = y;
             return;

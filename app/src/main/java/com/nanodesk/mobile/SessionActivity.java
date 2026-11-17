@@ -134,6 +134,7 @@ public final class SessionActivity extends Activity implements Session.Listener,
     private void loadPrefs() {
         rv.touchpad = Store.touchpad(this);
         rv.speed = Store.speed(this) / 10f;
+        rv.ptrScale = Store.pointerScale(this);
         rv.invertScroll = Store.invertScroll(this);
         rv.haptics = Store.haptics(this);
         rv.pasteAll = Store.pasteAll(this);
@@ -397,6 +398,29 @@ public final class SessionActivity extends Activity implements Session.Listener,
         });
         c.addView(sl);
         c.addView(sp);
+        TextView pl = Ui.text(this, "Размер курсора", 14, Theme.text, false);
+        pl.setPadding(0, Ui.dp(this, 14), 0, Ui.dp(this, 6));
+        c.addView(pl);
+        LinearLayout pr = new LinearLayout(this);
+        final TextView[] pb = new TextView[3];
+        String[] pn = { "Маленький", "Средний", "Большой" };
+        for (int i = 0; i < 3; i++) {
+            final int idx = i;
+            pb[i] = Ui.button(this, pn[i], i == Store.pointer(this));
+            pb[i].setTextSize(13);
+            pb[i].setPadding(Ui.dp(this, 8), 0, Ui.dp(this, 8), 0);
+            pb[i].setOnClickListener(new View.OnClickListener() {
+                public void onClick(View v) {
+                    Store.setPointer(SessionActivity.this, idx);
+                    rv.ptrScale = Store.pointerScale(SessionActivity.this);
+                    rv.invalidate();
+                    for (int k = 0; k < 3; k++) Ui.style(pb[k], k == idx);
+                }
+            });
+            pr.addView(pb[i], Ui.lpm(this, 0, ViewGroup.LayoutParams.WRAP_CONTENT, i == 0 ? 0 : 6, 0, 0, 0));
+            ((LinearLayout.LayoutParams) pb[i].getLayoutParams()).weight = 1;
+        }
+        c.addView(pr);
         Dlg.custom(this, "Качество и управление", c, "Готово", null);
     }
 

@@ -119,6 +119,13 @@ public final class SettingsActivity extends Activity {
         LinearLayout c2 = card();
         toggle(c2, "Режим «тачпад»", "Палец двигает курсор, как на ноутбуке. Выключено — «касание»: палец сам указывает место", Store.touchpad(this),
                 new Bool() { public void on(boolean v) { Store.setTouchpad(me, v); } });
+        line(c2, "Размер курсора", new String[] { "Маленький", "Средний", "Большой" }[Store.pointer(this)], null, new Runnable() {
+            public void run() {
+                Dlg.menu(me, "Размер курсора", new String[] { "Маленький", "Средний", "Большой" }, new Dlg.Pick() {
+                    public void pick(int i) { Store.setPointer(me, i); fill(); }
+                });
+            }
+        });
         toggle(c2, "Вибрация при жестах", "Отклик на долгое нажатие, правый клик и перетаскивание", Store.haptics(this),
                 new Bool() { public void on(boolean v) { Store.setHaptics(me, v); } });
         toggle(c2, "Обратная прокрутка", "Меняет направление прокрутки двумя пальцами", Store.invertScroll(this),

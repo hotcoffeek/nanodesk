@@ -55,6 +55,10 @@ public final class Store {
     public static void setHaptics(Context c, boolean v) { sp(c).edit().putBoolean("haptics", v).apply(); }
     public static boolean volumeScroll(Context c) { return sp(c).getBoolean("volscroll", false); }
     public static void setVolumeScroll(Context c, boolean v) { sp(c).edit().putBoolean("volscroll", v).apply(); }
+    /** Размер курсора: 0 — маленький, 1 — средний (по умолчанию), 2 — большой. */
+    public static int pointer(Context c) { return sp(c).getInt("pointer", 1); }
+    public static void setPointer(Context c, int v) { sp(c).edit().putInt("pointer", v).apply(); }
+    public static float pointerScale(Context c) { int p = pointer(c); return p == 0 ? 0.5f : (p == 2 ? 1.0f : 0.7f); }
     public static int speed(Context c) { return sp(c).getInt("speed", 14); }          // в десятых долях: 14 = ×1.4
     public static void setSpeed(Context c, int v) { sp(c).edit().putInt("speed", v).apply(); }
     public static int quality(Context c) { return sp(c).getInt("quality", 60); }
