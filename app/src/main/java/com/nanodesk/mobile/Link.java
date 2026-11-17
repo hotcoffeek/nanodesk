@@ -73,6 +73,22 @@ public final class Link implements Session.Listener {
             p2p = null;
             return;
         }
+        try {
+            final ConnectivityManager cm0 = (ConnectivityManager) app.getSystemService(Context.CONNECTIVITY_SERVICE);
+            p2p.wifiBinder = new com.nanodesk.mobile.net.UdpHub.Binder() {
+                @SuppressWarnings("deprecation")
+                public void bind(java.net.DatagramSocket s) throws java.io.IOException {
+                    for (Network n : cm0.getAllNetworks()) {
+                        android.net.NetworkCapabilities nc = cm0.getNetworkCapabilities(n);
+                        if (nc == null || nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_VPN)) continue;
+                        if (nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_WIFI) || nc.hasTransport(android.net.NetworkCapabilities.TRANSPORT_ETHERNET)) {
+                            n.bindSocket(s);
+                            return;
+                        }
+                    }
+                }
+            };
+        } catch (Exception ignore) { }
         started = true;
         startedAt = System.currentTimeMillis();
         try {
