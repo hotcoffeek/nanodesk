@@ -46,6 +46,9 @@ public final class P2p {
 
     public final String myId;
     public UdpHub hub;
+    /** Если задан — поиск в сети и подключение по локальному IP идут через Wi‑Fi в обход VPN. */
+    public volatile UdpHub.Binder wifiBinder;
+    private UdpHub lanHub;
     public final Signal sig = new Signal();
     private final Map<String, Pending> pending = new HashMap<String, Pending>();
     private volatile List<InetSocketAddress> mapped = new ArrayList<InetSocketAddress>();
@@ -80,6 +83,7 @@ public final class P2p {
     public void stop() {
         try { sig.stop(); } catch (Exception ignore) { }
         try { if (hub != null) hub.dispose(); } catch (Exception ignore) { }
+        try { if (lanHub != null) lanHub.dispose(); } catch (Exception ignore) { }
     }
 
     /** Сеть сменилась (Wi‑Fi ↔ мобильный): адреса устарели, брокеры переподключаем. */
@@ -192,7 +196,15 @@ public final class P2p {
     public UdpConn connectDirect(String host, int port, Cancel cancel) throws IOException {
         InetAddress ip = InetAddress.getByName(host);
         long cid = UdpHub.newCid();
-        UdpConn conn = hub.create(cid);
+        UdpHub use = hub;
+        // адрес из локальной сети при включённом VPN: трафик в обход VPN — отдельным сокетом, привязанным к Wi‑Fi
+        if (wifiBinder != null && (ip.isSiteLocalAddress() || ip.isLinkLocalAddress())) {
+            synchronized (this) {
+                if (lanHub == null) { try { lanHub = new UdpHub(0, wifiBinder); } catch (IOException ignore) { } }
+                if (lanHub != null) use = lanHub;
+            }
+        }
+        UdpConn conn = use.create(cid);
         conn.startDirect(new InetSocketAddress(ip, port));
         long until = System.currentTimeMillis() + 9000;
         while (System.currentTimeMillis() < until) {
@@ -225,6 +237,8 @@ public final class P2p {
         try {
             s = new DatagramSocket(null);
             s.setReuseAddress(true);
+            UdpHub.Binder wb = wifiBinder;
+            if (wb != null) { try { wb.bind(s); } catch (Exception ignore) { } }
             s.bind(new InetSocketAddress(0));
             s.setBroadcast(true);
             byte[] q = ("NDQ1?" + myId).getBytes(Bytes.UTF8);

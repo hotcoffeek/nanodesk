@@ -29,17 +29,24 @@ public final class UdpHub {
 
     public static double now() { return (System.nanoTime() - T0) / 1e6 + 1.0; }
 
-    public UdpHub(int bindPort) throws IOException {
+    /** Привязка сокета к конкретной сети (например, к Wi‑Fi в обход VPN). */
+    public interface Binder { void bind(DatagramSocket s) throws IOException; }
+
+    public UdpHub(int bindPort) throws IOException { this(bindPort, null); }
+
+    public UdpHub(int bindPort, Binder binder) throws IOException {
         DatagramSocket s;
         try {
             s = new DatagramSocket(null);
             s.setReuseAddress(true);
+            if (binder != null) { try { binder.bind(s); } catch (Exception ignore) { } }
             try { s.setReceiveBufferSize(4 * 1024 * 1024); } catch (Exception ignore) { }
             try { s.setSendBufferSize(2 * 1024 * 1024); } catch (Exception ignore) { }
             s.bind(new InetSocketAddress(bindPort));
         } catch (IOException e) {
             if (bindPort == 0) throw e;
             s = new DatagramSocket(null);
+            if (binder != null) { try { binder.bind(s); } catch (Exception ignore) { } }
             s.bind(new InetSocketAddress(0));
         }
         sock = s;
