@@ -241,7 +241,7 @@ public final class P2p {
             if (wb != null) { try { wb.bind(s); } catch (Exception ignore) { } }
             s.bind(new InetSocketAddress(0));
             s.setBroadcast(true);
-            byte[] q = ("NDQ1?" + myId).getBytes(Bytes.UTF8);
+            byte[] q = "NDQ1?".getBytes(Bytes.UTF8);
             List<InetAddress> targets = new ArrayList<InetAddress>();
             targets.add(InetAddress.getByName("255.255.255.255"));
             try {
